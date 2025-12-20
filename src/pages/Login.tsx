@@ -12,11 +12,14 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Attempting login...');
       const response = await apiClient.post('/auth/login', { email, password });
+      console.log('Login response:', response.data);
       login(response.data.token);
+      console.log('Token stored, navigating to dashboard...');
       navigate('/dashboard');
     } catch (err: unknown) {
-      console.error(err);
+      console.error('Login error:', err);
       alert("Login failed. Check credentials.");
     }
   };

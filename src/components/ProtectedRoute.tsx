@@ -5,6 +5,8 @@ import { AuthContext } from '../context/AuthContext';
 const ProtectedRoute = () => {
     const { user, loading } = useContext(AuthContext);
 
+    console.log('ProtectedRoute - user:', user, 'loading:', loading);
+
     if (loading) return null; // Wait for the token check to finish
 
     // Paradigm: Client-Side Guard

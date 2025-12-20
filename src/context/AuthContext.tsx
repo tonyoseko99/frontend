@@ -17,14 +17,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const token = localStorage.getItem("token");
     if (token) {
       // Logic to decode JWT (e.g., using jwt-decode library) and set user
-      // setUser(decodedToken);
+      // For now, creating a mock user
+      try {
+        const mockUser: User = {
+          id: "student-1",
+          role: "STUDENT"
+        };
+        setUser(mockUser);
+      } catch (error) {
+        console.error("Error processing stored token:", error);
+        localStorage.removeItem("token"); // Remove invalid token
+      }
     }
     setTimeout(() => setLoading(false), 0);
   }, []);
 
   const login = (token: string) => {
     localStorage.setItem("token", token);
-    // setUser(decodedToken);
+    // For now, we'll create a mock user since we don't have JWT decode
+    // In a real app, you would decode the token to get user info
+    try {
+      // Assuming the token is a simple JSON object for now
+      // In production, you'd use jwt-decode library
+      const mockUser: User = {
+        id: "student-1",
+        role: "STUDENT"
+      };
+      setUser(mockUser);
+    } catch (error) {
+      console.error("Error processing token:", error);
+    }
   };
 
   const logout = () => {
