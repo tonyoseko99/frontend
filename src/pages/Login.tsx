@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import {useNavigate} from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import apiClient from '../api/client';
 
@@ -6,13 +7,14 @@ export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await apiClient.post('/auth/login', { email, password });
       login(response.data.token);
-      // Redirect logic here (e.g., navigate('/dashboard'))
+      navigate('/dashboard');
     } catch (err: unknown) {
       console.error(err);
       alert("Login failed. Check credentials.");
