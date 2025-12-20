@@ -18,7 +18,7 @@ const OrdersList = () => {
 
     const handlePayment = async (orderId: number) => {
         try {
-            const response = await apiClient.post('/checkout', { orderId });
+            const response = await apiClient.post('/payment/create-checkout-session', { orderId });
             const { url } = response.data;
 
             // Use the checkout URL directly (modern approach)
