@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 
 interface Order {
@@ -11,6 +12,7 @@ interface Order {
 
 const OrdersList = () => {
     const [orders, setOrders] = useState<Order[]>([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         apiClient.get('/student/orders').then(res => setOrders(res.data));
@@ -34,6 +36,11 @@ const OrdersList = () => {
             console.error("Payment Process Error:", err);
             alert("Could not initiate payment.");
         }
+    };
+
+    const handleViewDetails = (orderId: number) => {
+        // Navigate to order details page. Route should exist under dashboard/orders/:id
+        navigate(`/dashboard/orders/${orderId}`);
     };
 
     return (
@@ -63,16 +70,26 @@ const OrdersList = () => {
                             </td>
                             <td className="px-6 py-4 text-slate-500">{new Date(order.deadline).toLocaleDateString()}</td>
                             <td className="px-6 py-4 font-semibold">${order.price}</td>
-                            {order.status === 'PENDING' ? (
-                                <button
-                                    onClick={() => handlePayment(order.id)}
-                                    className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-blue-700 transition"
-                                >
-                                    Pay Now
-                                </button>
-                            ) : (
-                                <button className="text-slate-400 cursor-not-allowed text-sm">View Details</button>
-                            )}
+
+                            <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                    {order.status === 'PENDING' && (
+                                        <button
+                                            onClick={() => handlePayment(order.id)}
+                                            className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-blue-700 transition"
+                                        >
+                                            Pay Now
+                                        </button>
+                                    )}
+
+                                    <button
+                                        onClick={() => handleViewDetails(order.id)}
+                                        className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-md text-sm font-bold hover:bg-slate-200 transition"
+                                    >
+                                        View Details
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     ))}
                     </tbody>

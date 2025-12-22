@@ -8,6 +8,7 @@ import {Login} from './pages/Login';
 import DashboardHome from './pages/student/DashboardHome';
 import OrdersList from './pages/student/OrdersList';
 import CreateOrder from './pages/student/CreateOrder';
+import OrderDetails from './pages/student/OrderDetails';
 
 function App() {
     return (
@@ -23,6 +24,7 @@ function App() {
                         <Route path="/dashboard" element={<Layout />}>
                             <Route index element={<DashboardHome />} />
                             <Route path="orders" element={<OrdersList />} />
+                            <Route path="orders/:id" element={<OrderDetails />} />
                             <Route path="create-order" element={<CreateOrder />} />
                         </Route>
                     </Route>
