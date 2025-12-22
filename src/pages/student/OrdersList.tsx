@@ -59,23 +59,20 @@ const OrdersList = () => {
                             <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(order.status)}`}>
                     {order.status}
-                      {order.status === 'PENDING' ? (
-                          <button
-                              onClick={() => handlePayment(order.id)}
-                              className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-blue-700 transition"
-                          >
-                              Pay Now
-                          </button>
-                      ) : (
-                          <button className="text-slate-400 cursor-not-allowed text-sm">View Details</button>
-                      )}
                   </span>
                             </td>
                             <td className="px-6 py-4 text-slate-500">{new Date(order.deadline).toLocaleDateString()}</td>
                             <td className="px-6 py-4 font-semibold">${order.price}</td>
-                            <td className="px-6 py-4">
-                                <button className="text-blue-600 hover:text-blue-800 font-medium">View Details</button>
-                            </td>
+                            {order.status === 'PENDING' ? (
+                                <button
+                                    onClick={() => handlePayment(order.id)}
+                                    className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-blue-700 transition"
+                                >
+                                    Pay Now
+                                </button>
+                            ) : (
+                                <button className="text-slate-400 cursor-not-allowed text-sm">View Details</button>
+                            )}
                         </tr>
                     ))}
                     </tbody>
