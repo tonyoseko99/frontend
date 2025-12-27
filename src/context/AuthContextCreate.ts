@@ -7,7 +7,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (token: string) => void;
+  login: (token: string, role?: User['role']) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -15,9 +15,9 @@ interface AuthContextType {
 // Provide a default value with no-op implementations to avoid `undefined` in useContext
 export const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: (token: string) => {
-    // no-op default; consume token to avoid unused-var lint errors
-    void token;
+  login: (token: string, role?: User['role']) => {
+    void token; // no-op default; consume token to avoid unused-var lint errors
+    void role;
   },
   logout: () => {},
   loading: false,

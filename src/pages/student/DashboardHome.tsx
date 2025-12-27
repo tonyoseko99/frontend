@@ -10,7 +10,7 @@ const DashboardHome = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await apiClient.get('/student/my-orders');
+                const res = await apiClient.get('/student/orders');
                 const orders = res.data;
                 setStats({
                     active: orders.filter((o: any) => o.status === 'ASSIGNED').length,

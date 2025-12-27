@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AuthContext } from "./AuthContextCreate";
 
 // Define the User type for TypeScript safety
@@ -7,43 +7,52 @@ interface User {
   role: "STUDENT" | "EXPERT" | "ADMIN";
 }
 
+const safeParseJwt = (token: string) => {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    // Use replaceAll to convert URL-safe base64 to regular base64
+    const b64 = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    // atob is available in browsers; for SSR you'd use Buffer
+    return JSON.parse(atob(b64));
+  } catch (err) {
+    console.warn('safeParseJwt failed to parse token payload', err);
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Paradigm: Persistence
-    // When the app refreshes, check if a token exists and decode it
     const token = localStorage.getItem("token");
     if (token) {
-      // Logic to decode JWT (e.g., using jwt-decode library) and set user
-      // For now, creating a mock user
       try {
+        const payload = safeParseJwt(token);
         const mockUser: User = {
-          id: "student-1",
-          role: "STUDENT"
+          id: payload?.id ?? 'student-1',
+          role: (payload?.role as User['role']) ?? 'STUDENT'
         };
-        setUser(mockUser);
+        // Defer setState to avoid synchronous state update inside effect
+        setTimeout(() => setUser(mockUser), 0);
       } catch (error) {
         console.error("Error processing stored token:", error);
-        localStorage.removeItem("token"); // Remove invalid token
+        localStorage.removeItem("token");
       }
     }
     setTimeout(() => setLoading(false), 0);
   }, []);
 
-  const login = (token: string) => {
+  const login = (token: string, role?: User['role']) => {
     localStorage.setItem("token", token);
-    // For now, we'll create a mock user since we don't have JWT decode
-    // In a real app, you would decode the token to get user info
     try {
-      // Assuming the token is a simple JSON object for now
-      // In production, you'd use jwt-decode library
-      const mockUser: User = {
-        id: "student-1",
-        role: "STUDENT"
-      };
-      setUser(mockUser);
+      // Try to decode the token to get authoritative id & role
+      const payload = safeParseJwt(token);
+      const resolvedRole = role ?? (payload?.role as User['role']) ?? 'STUDENT';
+      const resolvedId = payload?.id ?? (resolvedRole === 'EXPERT' ? 'expert-1' : 'student-1');
+      const loggedInUser: User = { id: resolvedId, role: resolvedRole };
+      setUser(loggedInUser);
     } catch (error) {
       console.error("Error processing token:", error);
     }
@@ -54,11 +63,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  const value = useMemo(() => ({ user, login, logout, loading }), [user, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
-export { AuthContext };
 
+export { AuthContext } from './AuthContextCreate';

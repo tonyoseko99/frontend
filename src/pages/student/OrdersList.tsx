@@ -14,8 +14,50 @@ const OrdersList = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const navigate = useNavigate();
 
+    const fetchOrders = async () => {
+        try {
+            const res = await apiClient.get('/student/orders');
+            setOrders(res.data);
+        } catch (err) {
+            console.error('Failed to fetch orders', err);
+        }
+    };
+
     useEffect(() => {
-        apiClient.get('/student/orders').then(res => setOrders(res.data));
+        const params = new URLSearchParams(globalThis.location.search);
+        const status = params.get('status');
+        const sessionId = params.get('session_id');
+
+        const runVerifyAndRefresh = async () => {
+            if (sessionId) {
+                try {
+                    // Call backend to verify the session and update order if paid
+                    await apiClient.get(`/payment/verify/${sessionId}`);
+                } catch (err) {
+                    console.warn('Could not verify session immediately', err);
+                }
+            }
+
+            // Re-fetch orders to reflect changes
+            await fetchOrders();
+
+            // Clean up the query params so repeated refreshes don't retrigger behavior.
+            params.delete('status');
+            params.delete('orderId');
+            params.delete('session_id');
+            const newSearch = params.toString();
+            const newUrl = globalThis.location.pathname + (newSearch ? `?${newSearch}` : '');
+            globalThis.history.replaceState({}, document.title, newUrl);
+        };
+
+        // Run initialization asynchronously to avoid calling setState synchronously inside effect
+        (async () => {
+            if (status === 'success' || sessionId) {
+                await runVerifyAndRefresh();
+            } else {
+                await fetchOrders();
+            }
+        })();
     }, []);
 
     const handlePayment = async (orderId: number) => {
@@ -25,7 +67,7 @@ const OrdersList = () => {
 
             // Use the checkout URL directly (modern approach)
             if (url) {
-                window.location.assign(url);
+                globalThis.location.assign(url);
                 return;
             }
 
