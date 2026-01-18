@@ -1,7 +1,7 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../api/client';
-import { AuthContext } from '../context/AuthContext';
+import apiClient from '../../api/client.ts';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +11,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { login } = useContext(AuthContext);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const validateDomain = (d: string) => {
@@ -41,15 +41,22 @@ const Register = () => {
 
       // Login to obtain token
       const res = await apiClient.post('/auth/login', { email, password });
-      const token = res.data.token;
-      login(token, role);
+      const { token, role: userRole } = res.data;
+      login(token);
 
-      // Redirect
-      if (role === 'EXPERT') navigate('/expert/onboard');
-      else navigate('/dashboard');
+      // Redirect based on actual user role from token
+      if (userRole === 'EXPERT') {
+        navigate('/expert/onboard');
+      } else if (userRole === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else if (typeof err === 'object' && err !== null) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         const msg = err?.response?.data?.message;
         setError(typeof msg === 'string' ? msg : 'Registration failed');
       } else setError('Registration failed');

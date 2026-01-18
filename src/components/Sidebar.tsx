@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -10,14 +10,14 @@ import {
     Briefcase,
     FileText,
 } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 type IconType = React.ComponentType<React.SVGProps<SVGSVGElement> & { size?: number; className?: string }>;
 
 const Sidebar = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useContext(AuthContext);
+    const { user } = useAuth();
 
     // Paradigm: Active State Highlighting
     // This helper function determines if the current route matches the link
@@ -29,21 +29,30 @@ const Sidebar = () => {
     };
 
     // Role-aware navigation
-    const navItems = user?.role === 'EXPERT'
+    const navItems = user?.role === 'ADMIN'
         ? [
-            { name: 'Dashboard', path: '/expert', icon: LayoutDashboard },
-            { name: 'Jobs', path: '/expert/jobs', icon: Briefcase },
-            { name: 'Submissions', path: '/expert/submissions', icon: FileText },
-            { name: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { name: 'Profile', path: '/dashboard/profile', icon: User },
+            { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+            { name: 'Users', path: '/admin/users', icon: Users },
+            { name: 'Orders', path: '/admin/orders', icon: ClipboardList },
+            { name: 'Messages', path: '/admin/messages', icon: MessageSquare },
+            { name: 'Profile', path: '/admin/profile', icon: User },
         ]
-        : [
-            { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-            { name: 'New Order', path: '/dashboard/create-order', icon: PlusCircle },
-            { name: 'My Orders', path: '/dashboard/orders', icon: ClipboardList },
-            { name: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { name: 'Profile', path: '/dashboard/profile', icon: User },
-        ];
+        : user?.role === 'EXPERT'
+            ? [
+                { name: 'Dashboard', path: '/expert', icon: LayoutDashboard },
+                { name: 'Jobs', path: '/expert/jobs', icon: Briefcase },
+                { name: 'My Jobs', path: '/expert/my-jobs', icon: Briefcase },
+                { name: 'Submissions', path: '/expert/submissions', icon: FileText },
+                { name: 'Messages', path: '/expert/messages', icon: MessageSquare },
+                { name: 'Profile', path: '/expert/profile', icon: User },
+            ]
+            : [
+                { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+                { name: 'New Order', path: '/dashboard/create-order', icon: PlusCircle },
+                { name: 'My Orders', path: '/dashboard/orders', icon: ClipboardList },
+                { name: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
+                { name: 'Profile', path: '/dashboard/profile', icon: User },
+            ];
 
     return (
         <div className="flex flex-col w-64 bg-slate-900 h-screen sticky top-0 text-slate-300">
@@ -61,11 +70,10 @@ const Sidebar = () => {
                     <Link
                         key={item.path}
                         to={item.path}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                            isActive(item.path)
-                                ? 'bg-blue-600 text-white'
-                                : 'hover:bg-slate-800 hover:text-white'
-                        }`}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${isActive(item.path)
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-slate-800 hover:text-white'
+                            }`}
                     >
                         {React.createElement(item.icon as IconType, { size: 20 })}
                         <span className="font-medium">{item.name}</span>

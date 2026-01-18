@@ -8,6 +8,8 @@ interface Order {
     status: string;
     deadline: string;
     price: number;
+    rating: number | null;
+    expert?: { id?: number; email?: string } | null;
 }
 
 const OrdersList = () => {
@@ -31,17 +33,12 @@ const OrdersList = () => {
         const runVerifyAndRefresh = async () => {
             if (sessionId) {
                 try {
-                    // Call backend to verify the session and update order if paid
                     await apiClient.get(`/payment/verify/${sessionId}`);
                 } catch (err) {
                     console.warn('Could not verify session immediately', err);
                 }
             }
-
-            // Re-fetch orders to reflect changes
             await fetchOrders();
-
-            // Clean up the query params so repeated refreshes don't retrigger behavior.
             params.delete('status');
             params.delete('orderId');
             params.delete('session_id');
@@ -50,30 +47,23 @@ const OrdersList = () => {
             globalThis.history.replaceState({}, document.title, newUrl);
         };
 
-        // Run initialization asynchronously to avoid calling setState synchronously inside effect
-        (async () => {
-            if (status === 'success' || sessionId) {
-                await runVerifyAndRefresh();
-            } else {
-                await fetchOrders();
-            }
-        })();
+        if (status === 'success' || sessionId) {
+            runVerifyAndRefresh();
+        } else {
+            fetchOrders();
+        }
     }, []);
 
     const handlePayment = async (orderId: number) => {
         try {
             const response = await apiClient.post('/payment/create-checkout-session', { orderId });
             const { url } = response.data;
-
-            // Use the checkout URL directly (modern approach)
             if (url) {
                 globalThis.location.assign(url);
-                return;
+            } else {
+                console.error("No checkout URL provided by the server");
+                alert("Payment system error. Please try again later.");
             }
-
-            // If no URL is provided, show an error
-            console.error("No checkout URL provided by the server");
-            alert("Payment system error. Please try again later.");
         } catch (err) {
             console.error("Payment Process Error:", err);
             alert("Could not initiate payment.");
@@ -81,7 +71,6 @@ const OrdersList = () => {
     };
 
     const handleViewDetails = (orderId: number) => {
-        // Navigate to order details page. Route should exist under dashboard/orders/:id
         navigate(`/dashboard/orders/${orderId}`);
     };
 
@@ -93,47 +82,49 @@ const OrdersList = () => {
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-slate-500 text-sm uppercase">
-                    <tr>
-                        <th className="px-6 py-4">Subject</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4">Deadline</th>
-                        <th className="px-6 py-4">Price</th>
-                        <th className="px-6 py-4">Action</th>
-                    </tr>
+                        <tr>
+                            <th className="px-6 py-4">Subject</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Deadline</th>
+                            <th className="px-6 py-4">Price</th>
+                            <th className="px-6 py-4">Action</th>
+                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                    {orders.map((order: Order) => (
-                        <tr key={order.id} className="hover:bg-slate-50 transition">
-                            <td className="px-6 py-4 font-medium text-slate-900">{order.subject}</td>
-                            <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(order.status)}`}>
-                    {order.status}
-                  </span>
-                            </td>
-                            <td className="px-6 py-4 text-slate-500">{new Date(order.deadline).toLocaleDateString()}</td>
-                            <td className="px-6 py-4 font-semibold">${order.price}</td>
-
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    {order.status === 'PENDING' && (
-                                        <button
-                                            onClick={() => handlePayment(order.id)}
-                                            className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-blue-700 transition"
-                                        >
-                                            Pay Now
+                        {orders.map((order: Order) => (
+                            <tr key={order.id} className="hover:bg-slate-50 transition">
+                                <td className="px-6 py-4 font-medium text-slate-900">{order.subject}</td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(order.status, order)}`}>
+                                        {getStatusText(order.status, order)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-slate-500">{new Date(order.deadline).toLocaleDateString()}</td>
+                                <td className="px-6 py-4 font-semibold">${order.price}</td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        {order.status === 'PENDING' && (
+                                            <button onClick={() => handlePayment(order.id)} className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-blue-700 transition">
+                                                Pay Now
+                                            </button>
+                                        )}
+                                        {order.status === 'REVIEW' && (
+                                            <button onClick={() => handleViewDetails(order.id)} className="bg-green-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-green-700 transition">
+                                                Review Solution
+                                            </button>
+                                        )}
+                                        {order.status === 'COMPLETED' && !order.rating && (
+                                            <button onClick={() => handleViewDetails(order.id)} className="bg-yellow-500 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-yellow-600 transition">
+                                                Review
+                                            </button>
+                                        )}
+                                        <button onClick={() => handleViewDetails(order.id)} className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-md text-sm font-bold hover:bg-slate-200 transition">
+                                            View Details
                                         </button>
-                                    )}
-
-                                    <button
-                                        onClick={() => handleViewDetails(order.id)}
-                                        className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-md text-sm font-bold hover:bg-slate-200 transition"
-                                    >
-                                        View Details
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
@@ -141,11 +132,26 @@ const OrdersList = () => {
     );
 };
 
-const getStatusStyle = (status: string) => {
+const getStatusText = (status: string, order: Order) => {
+    // For PAID status, check if expert is assigned
+    if (status === 'PAID') {
+        return order.expert ? 'AWAITING EXPERT' : 'FINDING EXPERT';
+    }
+    return status;
+};
+
+const getStatusStyle = (status: string, order?: Order) => {
+    // For PAID status, differentiate based on expert assignment
+    if (status === 'PAID') {
+        return order?.expert ? 'bg-blue-100 text-blue-700' : 'bg-cyan-100 text-cyan-700';
+    }
+
     switch (status) {
-        case 'PAID': return 'bg-green-100 text-green-700';
         case 'PENDING': return 'bg-yellow-100 text-yellow-700';
         case 'ASSIGNED': return 'bg-blue-100 text-blue-700';
+        case 'IN_PROGRESS': return 'bg-indigo-100 text-indigo-700';
+        case 'REVIEW': return 'bg-orange-100 text-orange-700';
+        case 'COMPLETED': return 'bg-emerald-100 text-emerald-700';
         default: return 'bg-slate-100 text-slate-700';
     }
 };

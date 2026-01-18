@@ -1,33 +1,51 @@
-import React, { useState, useContext } from 'react';
-import {useNavigate} from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import apiClient from '../api/client';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.tsx';
+import apiClient from '../../api/client.ts';
+import { APP_CONFIG } from "../../utils/domainConfig.ts";
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const appRole = APP_CONFIG.type; // 'STUDENT' or 'EXPERT'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+
     try {
       console.log('Attempting login...');
-      const response = await apiClient.post('/auth/login', { email, password });
+      const response = await apiClient.post('/auth/login', {
+        email,
+        password,
+        expectedRole: appRole
+      });
       console.log('Login response:', response.data);
-      login(response.data.token);
-      console.log('Token stored, navigating to dashboard...');
-      navigate('/dashboard');
-    } catch (err: unknown) {
-      console.error('Login error:', err);
-      alert("Login failed. Check credentials.");
-    }
-  };
 
-  const loginAsExpert = () => {
-    // Dev helper: create a fake token and mark as EXPERT
-    login('dev-expert-token', 'EXPERT');
-    navigate('/expert');
+      const { token, role } = response.data;
+      login(token);
+
+      console.log('Token stored, navigating to dashboard...');
+      // Navigate based on actual user role
+      if (role === 'EXPERT') {
+        navigate('/expert/dashboard');
+      } else if (role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      const errorMessage = err?.response?.data?.error || err?.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,6 +62,7 @@ export const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div>
@@ -55,22 +74,29 @@ export const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
-          <button className="w-full bg-blue-600 text-white py-2 rounded-md font-bold hover:bg-blue-700 transition">
-            Sign In
-          </button>
 
-          {/* Dev helper to sign in as expert quickly */}
-          <button type="button" onClick={loginAsExpert} className="w-full mt-2 bg-slate-200 text-slate-800 py-2 rounded-md">
-            Sign in as Expert (dev)
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-md font-bold hover:bg-blue-700 transition disabled:bg-blue-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
           <div className="text-center mt-2">
             <a href="/register" className="text-sm text-blue-600 hover:underline">Create an account</a>
           </div>
-         </div>
-       </form>
-     </div>
-   );
- };
+        </div>
+      </form>
+    </div>
+  );
+};

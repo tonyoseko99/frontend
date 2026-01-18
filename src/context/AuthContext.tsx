@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { AuthContext } from "./AuthContextCreate";
+import React, { useState, useEffect, useMemo, createContext, useContext } from "react";
 
 // Define the User type for TypeScript safety
 interface User {
@@ -7,13 +6,26 @@ interface User {
   role: "STUDENT" | "EXPERT" | "ADMIN";
 }
 
+interface AuthContextType {
+  user: User | null;
+  login: (token: string, role?: User['role']) => void;
+  logout: () => void;
+  loading: boolean;
+}
+
+// Create the context with a default value
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  login: () => { },
+  logout: () => { },
+  loading: true, // Default to true so consumers wait
+});
+
 const safeParseJwt = (token: string) => {
   try {
     const parts = token.split('.');
     if (parts.length < 2) return null;
-    // Use replaceAll to convert URL-safe base64 to regular base64
-    const b64 = parts[1].replaceAll('-', '+').replaceAll('_', '/');
-    // atob is available in browsers; for SSR you'd use Buffer
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(atob(b64));
   } catch (err) {
     console.warn('safeParseJwt failed to parse token payload', err);
@@ -30,31 +42,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (token) {
       try {
         const payload = safeParseJwt(token);
-        const mockUser: User = {
-          id: payload?.id ?? 'student-1',
-          role: (payload?.role as User['role']) ?? 'STUDENT'
-        };
-        // Defer setState to avoid synchronous state update inside effect
-        setTimeout(() => setUser(mockUser), 0);
+        if (payload && payload.id && payload.role) {
+          setUser({ id: payload.id, role: payload.role });
+        }
       } catch (error) {
         console.error("Error processing stored token:", error);
         localStorage.removeItem("token");
       }
     }
-    setTimeout(() => setLoading(false), 0);
+    setLoading(false);
   }, []);
 
   const login = (token: string, role?: User['role']) => {
     localStorage.setItem("token", token);
     try {
-      // Try to decode the token to get authoritative id & role
       const payload = safeParseJwt(token);
-      const resolvedRole = role ?? (payload?.role as User['role']) ?? 'STUDENT';
-      const resolvedId = payload?.id ?? (resolvedRole === 'EXPERT' ? 'expert-1' : 'student-1');
-      const loggedInUser: User = { id: resolvedId, role: resolvedRole };
+      if (!payload || !payload.id || !payload.role) {
+        console.error("Invalid token payload:", payload);
+        localStorage.removeItem("token");
+        return;
+      }
+      const resolvedRole = role ?? (payload.role as User['role']);
+      const loggedInUser: User = { id: payload.id, role: resolvedRole };
       setUser(loggedInUser);
     } catch (error) {
       console.error("Error processing token:", error);
+      localStorage.removeItem("token");
     }
   };
 
@@ -72,4 +85,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export { AuthContext } from './AuthContextCreate';
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
