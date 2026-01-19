@@ -424,7 +424,7 @@ const OrderDetails = () => {
                     {/* Chat Card */}
                     {order.status !== 'PENDING' && (
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <Chat orderId={orderId} />
+                            <Chat orderId={orderId} isLocked={order.status === 'COMPLETED'} />
                         </div>
                     )}
                 </div>

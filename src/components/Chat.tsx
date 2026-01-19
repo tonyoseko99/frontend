@@ -17,9 +17,10 @@ interface Message {
 
 interface ChatProps {
     orderId: string;
+    isLocked?: boolean;
 }
 
-const Chat = ({ orderId }: ChatProps) => {
+const Chat = ({ orderId, isLocked }: ChatProps) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -96,18 +97,30 @@ const Chat = ({ orderId }: ChatProps) => {
                 <div ref={messagesEndRef} />
             </div>
             <div className="p-4 border-t border-slate-200">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
-                        className="flex-1 px-4 py-2 rounded-full border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    <button type="submit" className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition">
-                        <Send size={20} />
-                    </button>
-                </form>
+                {isLocked ? (
+                    <div className="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-300 text-center">
+                        <p className="text-slate-500 text-sm font-medium italic">
+                            This order is completed and the chat is now closed.
+                        </p>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSendMessage} className="flex gap-2">
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Type a message..."
+                            className="flex-1 px-4 py-2 rounded-full border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!newMessage.trim()}
+                            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition disabled:opacity-50"
+                        >
+                            <Send size={20} />
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
     );

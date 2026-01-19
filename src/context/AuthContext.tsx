@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, createContext, useContext } from "
 
 // Define the User type for TypeScript safety
 interface User {
-  id: string;
+  id: number;
+  email: string;
   role: "STUDENT" | "EXPERT" | "ADMIN";
 }
 
@@ -42,8 +43,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (token) {
       try {
         const payload = safeParseJwt(token);
-        if (payload && payload.id && payload.role) {
-          setUser({ id: payload.id, role: payload.role });
+        if (payload && payload.id && payload.role && payload.email) {
+          setUser({ id: payload.id, role: payload.role, email: payload.email });
         }
       } catch (error) {
         console.error("Error processing stored token:", error);
@@ -57,13 +58,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("token", token);
     try {
       const payload = safeParseJwt(token);
-      if (!payload || !payload.id || !payload.role) {
+      if (!payload || !payload.id || !payload.role || !payload.email) {
         console.error("Invalid token payload:", payload);
         localStorage.removeItem("token");
         return;
       }
       const resolvedRole = role ?? (payload.role as User['role']);
-      const loggedInUser: User = { id: payload.id, role: resolvedRole };
+      const loggedInUser: User = { id: payload.id, role: resolvedRole, email: payload.email };
       setUser(loggedInUser);
     } catch (error) {
       console.error("Error processing token:", error);

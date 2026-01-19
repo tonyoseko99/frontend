@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { Clock, DollarSign, FileText, ArrowLeft, Loader, AlertTriangle, Upload, CheckCircle } from 'lucide-react';
+import Chat from '../../components/Chat';
 import ConfirmationModal from '../../components/ConfirmationModal';
 
 interface Job {
@@ -131,109 +132,119 @@ const JobDetails = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-6 transition">
         <ArrowLeft size={18} /> Back
       </button>
 
-      <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-        <div className="p-8 border-b border-slate-200">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-3xl font-bold text-slate-800">{job.subject}</h2>
-            {getStatusBadge()}
-          </div>
-
-          <div className="flex items-center gap-8 text-slate-500 mt-3">
-            <span className="flex items-center gap-2"><Clock size={16} /> Deadline: {new Date(job.deadline).toLocaleString()}</span>
-            <span className="flex items-center gap-2 font-bold text-green-600 text-lg"><DollarSign size={20} /> ${job.price.toFixed(2)}</span>
-          </div>
-
-          {/* Countdown Timer for Claimed Jobs */}
-          {isClaimedJob && timeRemaining && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="text-blue-600" size={20} />
-                <span className="font-bold text-blue-900">Time Remaining:</span>
-                <span className={`text-2xl font-mono font-bold ${timeRemaining === 'EXPIRED' ? 'text-red-600' : 'text-blue-600'}`}>
-                  {timeRemaining}
-                </span>
+      <div className={`grid grid-cols-1 ${isClaimedJob ? 'lg:grid-cols-3' : ''} gap-6`}>
+        <div className={isClaimedJob ? 'lg:col-span-2' : ''}>
+          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-200">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-3xl font-bold text-slate-800">{job.subject}</h2>
+                {getStatusBadge()}
               </div>
+
+              <div className="flex items-center gap-8 text-slate-500 mt-3">
+                <span className="flex items-center gap-2"><Clock size={16} /> Deadline: {new Date(job.deadline).toLocaleString()}</span>
+                <span className="flex items-center gap-2 font-bold text-green-600 text-lg"><DollarSign size={20} /> ${job.price.toFixed(2)}</span>
+              </div>
+
+              {/* Countdown Timer for Claimed Jobs */}
+              {isClaimedJob && timeRemaining && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Clock className="text-blue-600" size={20} />
+                    <span className="font-bold text-blue-900">Time Remaining:</span>
+                    <span className={`text-2xl font-mono font-bold ${timeRemaining === 'EXPIRED' ? 'text-red-600' : 'text-blue-600'}`}>
+                      {timeRemaining}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className="p-8">
-          <h3 className="text-lg font-bold text-slate-700 mb-2">Instructions</h3>
-          <p className="text-slate-600 whitespace-pre-wrap">{job.description}</p>
-        </div>
-
-        {/* Revision Notes for Experts */}
-        {isClaimedJob && job.status === 'IN_PROGRESS' && job.revisionNotes && (
-          <div className="mx-8 mb-8 p-6 bg-red-50 border-2 border-red-200 rounded-2xl animate-in slide-in-from-top duration-300">
-            <h3 className="text-lg font-bold text-red-800 mb-2 flex items-center gap-2">
-              <AlertTriangle size={20} />
-              Revision Feedback from Student
-            </h3>
-            <div className="bg-white p-4 rounded-xl border border-red-100 text-red-900 shadow-sm italic">
-              "{job.revisionNotes}"
+            <div className="p-8">
+              <h3 className="text-lg font-bold text-slate-700 mb-2">Instructions</h3>
+              <p className="text-slate-600 whitespace-pre-wrap">{job.description}</p>
             </div>
-            <p className="text-xs text-red-600 mt-2">
-              Please address the comments above and resubmit your solution.
-            </p>
-          </div>
-        )}
 
-        {job.files && job.files.length > 0 && (
-          <div className="p-8 border-t border-slate-200">
-            <h3 className="text-lg font-bold text-slate-700 mb-3">Attached Files</h3>
-            <ul className="space-y-2">
-              {job.files.map((file, index) => (
-                <li key={index}>
-                  <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline">
-                    <FileText size={18} /> {file.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+            {/* Revision Notes for Experts */}
+            {isClaimedJob && job.status === 'IN_PROGRESS' && job.revisionNotes && (
+              <div className="mx-8 mb-8 p-6 bg-red-50 border-2 border-red-200 rounded-2xl animate-in slide-in-from-top duration-300">
+                <h3 className="text-lg font-bold text-red-800 mb-2 flex items-center gap-2">
+                  <AlertTriangle size={20} />
+                  Revision Feedback from Student
+                </h3>
+                <div className="bg-white p-4 rounded-xl border border-red-100 text-red-900 shadow-sm italic">
+                  "{job.revisionNotes}"
+                </div>
+                <p className="text-xs text-red-600 mt-2">
+                  Please address the comments above and resubmit your solution.
+                </p>
+              </div>
+            )}
 
-        <div className="p-8 bg-slate-50 border-t border-slate-200">
-          {isClaimedJob ? (
-            <div className="space-y-3">
-              {job.status === 'IN_PROGRESS' && (
+            {job.files && job.files.length > 0 && (
+              <div className="p-8 border-t border-slate-200">
+                <h3 className="text-lg font-bold text-slate-700 mb-3">Attached Files</h3>
+                <ul className="space-y-2">
+                  {job.files.map((file, index) => (
+                    <li key={index}>
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline">
+                        <FileText size={18} /> {file.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="p-8 bg-slate-50 border-t border-slate-200">
+              {isClaimedJob ? (
+                <div className="space-y-3">
+                  {job.status === 'IN_PROGRESS' && (
+                    <button
+                      onClick={handleSubmitSolution}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-100 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Upload size={20} />
+                      Submit Solution
+                    </button>
+                  )}
+                  {job.status === 'REVIEW' && (
+                    <div className="text-center py-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                      <p className="text-yellow-700 font-semibold">Solution submitted and under review</p>
+                    </div>
+                  )}
+                  {job.status === 'COMPLETED' && (
+                    <div className="text-center py-4 bg-green-50 border border-green-200 rounded-xl">
+                      <p className="text-green-700 font-semibold flex items-center justify-center gap-2">
+                        <CheckCircle size={20} />
+                        Job Completed
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <button
-                  onClick={handleSubmitSolution}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-100 transition-all flex items-center justify-center gap-2"
+                  onClick={handleClaimJob}
+                  disabled={claiming}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-100 transition-all disabled:opacity-50"
                 >
-                  <Upload size={20} />
-                  Submit Solution
+                  {claiming ? 'Claiming...' : 'Claim This Job'}
                 </button>
               )}
-              {job.status === 'REVIEW' && (
-                <div className="text-center py-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                  <p className="text-yellow-700 font-semibold">Solution submitted and under review</p>
-                </div>
-              )}
-              {job.status === 'COMPLETED' && (
-                <div className="text-center py-4 bg-green-50 border border-green-200 rounded-xl">
-                  <p className="text-green-700 font-semibold flex items-center justify-center gap-2">
-                    <CheckCircle size={20} />
-                    Job Completed
-                  </p>
-                </div>
-              )}
             </div>
-          ) : (
-            <button
-              onClick={handleClaimJob}
-              disabled={claiming}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-100 transition-all disabled:opacity-50"
-            >
-              {claiming ? 'Claiming...' : 'Claim This Job'}
-            </button>
-          )}
+          </div>
         </div>
+
+        {isClaimedJob && (
+          <div className="lg:col-span-1">
+            <Chat orderId={jobId!} isLocked={job.status === 'COMPLETED'} />
+          </div>
+        )}
       </div>
 
       <ConfirmationModal

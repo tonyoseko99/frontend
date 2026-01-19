@@ -19,6 +19,20 @@ const LandingPage = () => {
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [scrolled, setScrolled] = useState(false);
+    const [experts, setExperts] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchLeaderboard = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/expert-stats/leaderboard');
+                const data = await res.json();
+                setExperts(data);
+            } catch (err) {
+                console.error('Failed to fetch leaderboard:', err);
+            }
+        };
+        fetchLeaderboard();
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -197,6 +211,76 @@ const LandingPage = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Experts Leaderboard Section */}
+            <section id="tutors" className="py-32 px-6 relative z-10 bg-white/[0.01]">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+                        <div className="space-y-4">
+                            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-blue-400">
+                                <Trophy size={12} />
+                                <span>World-Class Talent</span>
+                            </div>
+                            <h2 className="text-4xl lg:text-5xl font-black tracking-tight">Meet Our <span className="text-blue-500">Top Experts.</span></h2>
+                            <p className="text-slate-400 max-w-xl font-medium">The elite 2% of academic specialists, vetted for PhD-level research and advanced engineering.</p>
+                        </div>
+                        <button className="text-blue-400 font-bold flex items-center gap-2 hover:text-blue-300 transition group">
+                            View all specialists <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {experts.length > 0 ? (
+                            experts.map((expert) => (
+                                <div key={expert.id} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2rem] p-8 group hover:border-blue-500/30 transition-all duration-500 hover:-translate-y-2">
+                                    <div className="flex items-start gap-4 mb-6">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-500/20 shrink-0">
+                                            {expert.avatar ? <img src={expert.avatar} alt={expert.name} className="w-full h-full object-cover rounded-2xl" /> : expert.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-xl font-bold text-white truncate">{expert.name}</h3>
+                                            <div className="flex items-center gap-1 text-yellow-400 mt-1">
+                                                <Star size={14} className="fill-yellow-400" />
+                                                <span className="text-sm font-black tracking-tighter">{expert.rating.toFixed(1)}</span>
+                                                <span className="text-slate-500 text-xs ml-1 font-bold">({expert.completedOrders} sessions)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-slate-400 text-sm leading-relaxed mb-6 font-medium line-clamp-2">
+                                        {expert.bio || "Academic specialist in advanced research and high-stakes assessment architecture."}
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {(expert.subjects || ['Advanced STEM', 'CS Code']).slice(0, 3).map((sub: string) => (
+                                            <span key={sub} className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-slate-300 uppercase tracking-wider group-hover:bg-blue-500/10 group-hover:border-blue-500/20 transition-colors">
+                                                {sub}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            // Skeleton placeholders
+                            [1, 2, 3].map(i => (
+                                <div key={i} className="bg-white/5 border border-white/10 rounded-[2rem] p-8 animate-pulse">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-16 h-16 rounded-2xl bg-white/10"></div>
+                                        <div className="space-y-2 flex-1">
+                                            <div className="h-4 bg-white/10 rounded w-2/3"></div>
+                                            <div className="h-3 bg-white/10 rounded w-1/3"></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="h-3 bg-white/10 rounded w-full"></div>
+                                        <div className="h-3 bg-white/10 rounded w-4/5"></div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </section>
