@@ -59,7 +59,7 @@ const StudentProfile = () => {
 
                 // Fetch orders to calculate stats
                 const ordersRes = await apiClient.get('/student/orders');
-                const orders = ordersRes.data;
+                const orders = Array.isArray(ordersRes.data) ? ordersRes.data : ordersRes.data.data;
 
                 const stats = {
                     totalOrders: orders.length,

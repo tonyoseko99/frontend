@@ -19,7 +19,9 @@ const OrdersList = () => {
     const fetchOrders = async () => {
         try {
             const res = await apiClient.get('/student/orders');
-            setOrders(res.data);
+            // Handle both paginated and legacy array responses
+            const ordersData = Array.isArray(res.data) ? res.data : (res.data.data || []);
+            setOrders(ordersData);
         } catch (err) {
             console.error('Failed to fetch orders', err);
         }

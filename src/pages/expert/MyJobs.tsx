@@ -22,7 +22,9 @@ const MyJobs = () => {
       try {
         // This endpoint needs to be created on the backend
         const res = await apiClient.get('/expert/my-jobs');
-        setJobs(res.data);
+        // Handle both paginated and legacy array responses
+        const jobsData = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        setJobs(jobsData);
       } catch (err) {
         setError('Failed to load your jobs. Please try again later.');
       } finally {

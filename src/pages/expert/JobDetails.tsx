@@ -32,21 +32,8 @@ const JobDetails = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const endpoint = isClaimedJob ? `/expert/my-jobs` : `/expert/jobs/${jobId}`;
-        const res = await apiClient.get(endpoint);
-
-        if (isClaimedJob) {
-          // Find the specific job from the my-jobs list
-          const myJob = res.data.find((j: Job) => j.id === parseInt(jobId || '0'));
-          if (!myJob) {
-            setError('Job not found in your claimed jobs.');
-            setLoading(false);
-            return;
-          }
-          setJob(myJob);
-        } else {
-          setJob(res.data);
-        }
+        const res = await apiClient.get(`/expert/jobs/${jobId}`);
+        setJob(res.data);
       } catch (err) {
         setError('Failed to load job details.');
       } finally {

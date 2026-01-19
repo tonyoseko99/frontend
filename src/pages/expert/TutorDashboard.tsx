@@ -37,7 +37,9 @@ const TutorDashboard = () => {
                     apiClient.get('/expert/my-jobs')
                 ]);
                 setStats(statsRes.data);
-                setRecentJobs(jobsRes.data.slice(0, 5)); // Get latest 5 jobs
+                // Handle both paginated and legacy array responses
+                const jobsData = Array.isArray(jobsRes.data) ? jobsRes.data : (jobsRes.data.data || []);
+                setRecentJobs(jobsData.slice(0, 5)); // Get latest 5 jobs
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
             } finally {

@@ -28,12 +28,10 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 
+import { Toaster } from 'react-hot-toast';
 import { SocketProvider } from './context/SocketContext';
-
 import ExpertProfile from './pages/expert/ExpertProfile';
-
 import Proctoring from './pages/Proctoring';
-
 import ExpertReviews from "./pages/expert/ExpertReviews";
 
 function App() {
@@ -43,6 +41,7 @@ function App() {
     return (
         <SocketProvider>
             <AuthProvider>
+                <Toaster position="top-right" />
                 <Router>
                     <Routes>
                         <Route path="/" element={<LandingPage />} />

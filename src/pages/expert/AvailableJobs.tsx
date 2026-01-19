@@ -20,7 +20,9 @@ const AvailableJobs = () => {
     const fetchJobs = async () => {
       try {
         const res = await apiClient.get('/expert/jobs');
-        setJobs(res.data);
+        // Handle both paginated and legacy array responses
+        const jobsData = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        setJobs(jobsData);
       } catch (err) {
         setError('Failed to load available jobs. The server might be busy or down. Please try again later.');
       } finally {
@@ -37,32 +39,32 @@ const AvailableJobs = () => {
 
   if (loading) {
     return (
-        <div className="flex justify-center items-center h-64">
-            <Loader className="animate-spin text-blue-600" size={48} />
-        </div>
+      <div className="flex justify-center items-center h-64">
+        <Loader className="animate-spin text-blue-600" size={48} />
+      </div>
     );
   }
 
   if (error) {
     return (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl flex items-center gap-4">
-            <AlertTriangle size={32} />
-            <div>
-                <h3 className="font-bold text-lg">Error</h3>
-                <p>{error}</p>
-            </div>
+      <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl flex items-center gap-4">
+        <AlertTriangle size={32} />
+        <div>
+          <h3 className="font-bold text-lg">Error</h3>
+          <p>{error}</p>
         </div>
+      </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex justify-between items-end">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900">Job Marketplace</h1>
-                <p className="text-slate-500 mt-1">Browse and select academic tasks that match your expertise.</p>
-            </div>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Job Marketplace</h1>
+          <p className="text-slate-500 mt-1">Browse and select academic tasks that match your expertise.</p>
         </div>
+      </div>
 
       {jobs.length === 0 ? (
         <div className="text-center py-24 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -82,14 +84,14 @@ const AvailableJobs = () => {
                     </a>
                   </h3>
                   <div className="flex items-center gap-6 text-slate-500 text-sm mt-2">
-                      <span className="flex items-center gap-2"><Clock size={16} /> {new Date(job.deadline).toLocaleString()}</span>
-                      <span className="flex items-center gap-2 font-bold text-green-600"><DollarSign size={16} /> {job.price.toFixed(2)}</span>
+                    <span className="flex items-center gap-2"><Clock size={16} /> {new Date(job.deadline).toLocaleString()}</span>
+                    <span className="flex items-center gap-2 font-bold text-green-600"><DollarSign size={16} /> {job.price.toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="flex-shrink-0">
-                    <button onClick={() => handleViewJob(job.id)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-semibold shadow-lg shadow-blue-200 transition-all">
-                        View & Claim <ArrowRight size={18} />
-                    </button>
+                  <button onClick={() => handleViewJob(job.id)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-semibold shadow-lg shadow-blue-200 transition-all">
+                    View & Claim <ArrowRight size={18} />
+                  </button>
                 </div>
               </div>
             </div>

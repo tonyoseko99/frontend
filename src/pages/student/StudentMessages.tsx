@@ -34,8 +34,9 @@ const StudentMessages = () => {
         const fetchOrders = async () => {
             try {
                 const res = await apiClient.get('/student/orders');
+                const ordersData = Array.isArray(res.data) ? res.data : res.data.data;
                 // Only show orders that have an expert assigned (can message about them)
-                const ordersWithExperts = res.data.filter((order: Order) => order.status !== 'PENDING' && order.status !== 'PAID');
+                const ordersWithExperts = ordersData.filter((order: Order) => order.status !== 'PENDING' && order.status !== 'PAID');
                 setOrders(ordersWithExperts);
             } catch (err) {
                 setError('Failed to load orders');

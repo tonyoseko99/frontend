@@ -21,7 +21,8 @@ const SubmissionsList = () => {
             try {
                 // Fetch jobs that have been submitted (status: REVIEW or COMPLETED)
                 const res = await apiClient.get('/expert/my-jobs');
-                const submittedJobs = res.data.filter((job: Submission) =>
+                const jobsData = Array.isArray(res.data) ? res.data : res.data.data;
+                const submittedJobs = jobsData.filter((job: Submission) =>
                     job.status === 'REVIEW' || job.status === 'COMPLETED'
                 );
                 setSubmissions(submittedJobs);

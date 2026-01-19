@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, AlertCircle, Info, Lightbulb, TrendingUp, TrendingDown } from 'lucide-react';
 import apiClient from '../../api/client';
+import toast from 'react-hot-toast';
 import {
     ACADEMIC_LEVELS,
     ASSIGNMENT_TYPES,
@@ -71,6 +72,8 @@ const CreateOrder = () => {
 
         if (!force && !handleBudgetValidation()) return;
 
+        const toastId = toast.loading('Posting your task...');
+
         try {
             const fd = new FormData();
             fd.append('subject', formData.subject);
@@ -87,10 +90,12 @@ const CreateOrder = () => {
             }
 
             await apiClient.post('/student/orders', fd);
+            toast.success('Task posted successfully!', { id: toastId });
             navigate('/dashboard/orders');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Create order failed:', error);
-            alert("Failed to create task. Please try again.");
+            const message = error.response?.data?.message || "Failed to create task. Please try again.";
+            toast.error(message, { id: toastId });
         }
     };
 
@@ -283,8 +288,8 @@ const CreateOrder = () => {
 
                             {userPrice > 0 && (
                                 <div className={`p-4 rounded-xl flex items-start gap-3 border-2 ${Math.abs(userPrice - systemEstimate) <= systemEstimate * 0.15
-                                        ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                                        : userPrice < systemEstimate ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-blue-50 border-blue-100 text-blue-700'
+                                    ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                                    : userPrice < systemEstimate ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-blue-50 border-blue-100 text-blue-700'
                                     }`}>
                                     <AlertCircle size={18} className="shrink-0 mt-0.5" />
                                     <div className="text-xs font-bold leading-relaxed">

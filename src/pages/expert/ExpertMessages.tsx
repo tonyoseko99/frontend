@@ -34,7 +34,8 @@ const ExpertMessages = () => {
         const fetchJobs = async () => {
             try {
                 const res = await apiClient.get('/expert/my-jobs');
-                setJobs(res.data);
+                const jobsData = Array.isArray(res.data) ? res.data : res.data.data;
+                setJobs(jobsData);
             } catch (err) {
                 setError('Failed to load jobs');
             } finally {

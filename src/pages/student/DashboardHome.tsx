@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
     BookOpen,
     Clock,
@@ -29,6 +30,11 @@ interface DashboardStats {
     totalSpent: number;
 }
 
+const getTimeRemaining = (deadline: string) => {
+    const diff = new Date(deadline).getTime() - new Date().getTime();
+    return diff / (1000 * 60 * 60); // hours
+};
+
 const DashboardHome = () => {
     const navigate = useNavigate();
     const [orders, setOrders] = useState<Order[]>([]);
@@ -39,13 +45,61 @@ const DashboardHome = () => {
         totalSpent: 0
     });
     const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<any>(null);
+
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    useEffect(() => {
+        const verifyPayment = async () => {
+            const status = searchParams.get('status');
+            const sessionId = searchParams.get('session_id');
+
+            if (status === 'success' && sessionId) {
+                const toastId = toast.loading('Verifying your payment...');
+                try {
+                    await apiClient.get(`/payment/verify/${sessionId}`);
+                    toast.success('Payment successful! Your order is now active.', { id: toastId });
+
+                    // Refresh data after successful payment
+                    const [ordersRes, userRes] = await Promise.all([
+                        apiClient.get('/student/orders'),
+                        apiClient.get('/auth/me')
+                    ]);
+                    const ordersArray = Array.isArray(ordersRes.data) ? ordersRes.data : ordersRes.data.data;
+                    setOrders(ordersArray.slice(0, 5));
+                    setUser(userRes.data);
+
+                    // Clear search params to prevent multiple verifications
+                    searchParams.delete('status');
+                    searchParams.delete('session_id');
+                    searchParams.delete('orderId');
+                    setSearchParams(searchParams);
+                } catch (error) {
+                    console.error('Payment verification failed:', error);
+                    toast.error('Could not verify payment. Please contact support.', { id: toastId });
+                }
+            } else if (status === 'cancel') {
+                toast.error('Payment was cancelled.');
+                searchParams.delete('status');
+                searchParams.delete('orderId');
+                setSearchParams(searchParams);
+            }
+        };
+
+        verifyPayment();
+    }, [searchParams, setSearchParams]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await apiClient.get('/student/orders');
-                const ordersData = res.data;
-                setOrders(ordersData.slice(0, 5)); // Get latest 5 orders
+                const [ordersRes, userRes] = await Promise.all([
+                    apiClient.get('/student/orders'),
+                    apiClient.get('/auth/me')
+                ]);
+
+                const ordersData = Array.isArray(ordersRes.data) ? ordersRes.data : ordersRes.data.data;
+                setUser(userRes.data);
+                setOrders(ordersData.slice(0, 5));
 
                 // Calculate stats
                 const stats = {
@@ -154,9 +208,23 @@ const DashboardHome = () => {
                                     >
                                         <div className="flex-1">
                                             <h3 className="font-semibold text-slate-900">{order.subject}</h3>
-                                            <p className="text-sm text-slate-500">
-                                                Due: {new Date(order.deadline).toLocaleDateString()}
-                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <p className="text-sm text-slate-500">
+                                                    Due: {new Date(order.deadline).toLocaleDateString()}
+                                                </p>
+                                                {getTimeRemaining(order.deadline) <= 24 && getTimeRemaining(order.deadline) > 0 && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full animate-pulse">
+                                                        <Clock size={10} />
+                                                        {Math.floor(getTimeRemaining(order.deadline))}h left
+                                                    </span>
+                                                )}
+                                                {getTimeRemaining(order.deadline) <= 0 && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                                                        <AlertCircle size={10} />
+                                                        Overdue
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(order.status)}`}>
@@ -225,6 +293,53 @@ const DashboardHome = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Refer & Earn Section */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl border border-white/10 group hover:shadow-2xl transition-all duration-300">
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="space-y-4 max-w-xl text-center md:text-left">
+                        <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/30 text-xs font-bold uppercase tracking-wider">
+                            🚀 New: Rewards Program
+                        </div>
+                        <h2 className="text-3xl font-extrabold tracking-tight">Refer Friends, Earn Academic Credit</h2>
+                        <p className="text-purple-100 text-lg leading-relaxed">
+                            Share your link with classmates. They get <span className="text-white font-bold underline decoration-amber-400">10% OFF</span> their first order, and you earn <span className="text-white font-bold underline decoration-amber-400">$10</span> in academic credit!
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
+                            <div className="w-full sm:w-auto bg-white/10 backdrop-blur-xl border border-white/20 px-6 py-4 rounded-2xl flex items-center justify-between gap-4 group/code cursor-pointer hover:bg-white/20 transition-all">
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold text-purple-200 mb-0.5">Your Referral Code</p>
+                                    <p className="text-xl font-black tracking-widest text-white font-mono uppercase">{user?.referralCode || 'REF-XXXXX'}</p>
+                                </div>
+                                <div className="bg-white/20 p-2.5 rounded-xl group-hover/code:scale-110 transition-transform">
+                                    <Plus className="rotate-45" size={20} />
+                                </div>
+                            </div>
+                            <button className="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-blue-900 px-8 py-4 rounded-2xl font-black text-lg transition-all active:scale-95 shadow-lg shadow-amber-400/20">
+                                Invite Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center flex flex-col items-center gap-2">
+                            <Plus className="text-amber-400" size={32} />
+                            <p className="text-2xl font-black text-white">0</p>
+                            <p className="text-xs font-bold text-purple-200">Referred</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center flex flex-col items-center gap-2">
+                            <DollarSign className="text-amber-400" size={32} />
+                            <p className="text-2xl font-black text-white">${user?.rewardBalance?.toFixed(2) || '0.00'}</p>
+                            <p className="text-xs font-bold text-purple-200">Earnings</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Decorative Elements */}
+                <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-[80px]" />
+                <div className="absolute bottom-[-10%] left-[-5%] w-48 h-48 bg-purple-400/20 rounded-full blur-[60px]" />
             </div>
 
             {/* Order Status Overview */}
