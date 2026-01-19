@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, BookOpen, CheckCircle, Clock, Loader, TrendingUp, Award, Target, Briefcase } from 'lucide-react';
+import { DollarSign, BookOpen, CheckCircle, Clock, Loader, TrendingUp, Award, Target, Briefcase, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 
@@ -179,6 +179,13 @@ const TutorDashboard = () => {
                         >
                             <Clock size={20} />
                             Messages
+                        </button>
+                        <button
+                            onClick={() => navigate('/expert/reviews')}
+                            className="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold hover:bg-slate-200 transition flex items-center justify-center gap-2"
+                        >
+                            <Star size={20} className="text-yellow-500" />
+                            My Reviews
                         </button>
                         <button
                             onClick={() => navigate('/expert/profile')}

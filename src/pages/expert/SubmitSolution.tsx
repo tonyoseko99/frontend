@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { Upload, ArrowLeft, FileText, AlertTriangle } from 'lucide-react';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 const SubmitSolution = () => {
   const { jobId } = useParams<{ jobId: string }>();
@@ -9,12 +10,17 @@ const SubmitSolution = () => {
   const [files, setFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!jobId) return setError('Missing job ID');
     if (!files || files.length === 0) return setError('Please attach solution files');
+    setShowSubmitConfirm(true);
+  };
 
+  const confirmSubmit = async () => {
+    if (!files) return;
     const fd = new FormData();
     Array.from(files).forEach((f) => fd.append('solutionFiles', f));
 
@@ -112,6 +118,16 @@ const SubmitSolution = () => {
           </button>
         </form>
       </div>
+
+      <ConfirmationModal
+        isOpen={showSubmitConfirm}
+        onClose={() => setShowSubmitConfirm(false)}
+        onConfirm={confirmSubmit}
+        title="Submit Solution?"
+        message="Are you sure you are ready to submit this solution? Please double-check that all files are correct and complete."
+        confirmLabel="Yes, Submit Now"
+        type="info"
+      />
     </div>
   );
 };

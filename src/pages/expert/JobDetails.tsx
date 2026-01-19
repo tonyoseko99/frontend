@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { Clock, DollarSign, FileText, ArrowLeft, Loader, AlertTriangle, Upload, CheckCircle } from 'lucide-react';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 interface Job {
   id: number;
@@ -11,6 +12,7 @@ interface Job {
   price: number;
   status?: string;
   files: { url: string; name: string }[];
+  revisionNotes?: string;
 }
 
 const JobDetails = () => {
@@ -21,6 +23,7 @@ const JobDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [showClaimConfirm, setShowClaimConfirm] = useState(false);
   const navigate = useNavigate();
 
   // Determine if this is a claimed job (from my-jobs) or available job
@@ -83,6 +86,10 @@ const JobDetails = () => {
   }, [job, isClaimedJob]);
 
   const handleClaimJob = async () => {
+    setShowClaimConfirm(true);
+  };
+
+  const confirmClaimJob = async () => {
     setClaiming(true);
     try {
       await apiClient.post(`/expert/jobs/${jobId}/claim`);
@@ -120,7 +127,7 @@ const JobDetails = () => {
   const getStatusBadge = () => {
     if (!job.status) return null;
 
-    const statusConfig: Record<string, { bg: string; text: string; icon: JSX.Element }> = {
+    const statusConfig: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
       'IN_PROGRESS': { bg: 'bg-blue-100', text: 'text-blue-700', icon: <Clock size={16} /> },
       'REVIEW': { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: <Clock size={16} /> },
       'COMPLETED': { bg: 'bg-green-100', text: 'text-green-700', icon: <CheckCircle size={16} /> },
@@ -172,6 +179,22 @@ const JobDetails = () => {
           <h3 className="text-lg font-bold text-slate-700 mb-2">Instructions</h3>
           <p className="text-slate-600 whitespace-pre-wrap">{job.description}</p>
         </div>
+
+        {/* Revision Notes for Experts */}
+        {isClaimedJob && job.status === 'IN_PROGRESS' && job.revisionNotes && (
+          <div className="mx-8 mb-8 p-6 bg-red-50 border-2 border-red-200 rounded-2xl animate-in slide-in-from-top duration-300">
+            <h3 className="text-lg font-bold text-red-800 mb-2 flex items-center gap-2">
+              <AlertTriangle size={20} />
+              Revision Feedback from Student
+            </h3>
+            <div className="bg-white p-4 rounded-xl border border-red-100 text-red-900 shadow-sm italic">
+              "{job.revisionNotes}"
+            </div>
+            <p className="text-xs text-red-600 mt-2">
+              Please address the comments above and resubmit your solution.
+            </p>
+          </div>
+        )}
 
         {job.files && job.files.length > 0 && (
           <div className="p-8 border-t border-slate-200">
@@ -225,6 +248,16 @@ const JobDetails = () => {
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={showClaimConfirm}
+        onClose={() => setShowClaimConfirm(false)}
+        onConfirm={confirmClaimJob}
+        title="Claim This Job?"
+        message="By claiming this job, you commit to delivering high-quality work by the specified deadline. This action cannot be undone once another expert is excluded."
+        confirmLabel="Yes, Claim Job"
+        type="warning"
+      />
     </div>
   );
 };

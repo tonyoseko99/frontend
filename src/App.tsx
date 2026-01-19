@@ -2,8 +2,6 @@ import { APP_CONFIG } from './utils/domainConfig';
 import { AuthProvider } from "./context/AuthContext";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
-import { Login } from "./pages/shared/Login";
-import Register from "./pages/shared/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardHome from "./pages/student/DashboardHome";
 import OrdersList from "./pages/student/OrdersList";
@@ -36,6 +34,8 @@ import ExpertProfile from './pages/expert/ExpertProfile';
 
 import Proctoring from './pages/Proctoring';
 
+import ExpertReviews from "./pages/expert/ExpertReviews";
+
 function App() {
     const isTutorPortal = APP_CONFIG?.type === 'EXPERT';
     const isAdminPortal = APP_CONFIG?.type === 'ADMIN';
@@ -46,8 +46,8 @@ function App() {
                 <Router>
                     <Routes>
                         <Route path="/" element={<LandingPage />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
+                        <Route path="/login" element={<Navigate to="/" replace />} />
+                        <Route path="/register" element={<Navigate to="/" replace />} />
                         <Route path="/expert/:expertId" element={<ExpertProfile />} />
                         <Route path="/proctoring" element={<Proctoring />} />
 
@@ -78,6 +78,7 @@ function App() {
                                     <Route path="profile" element={<ExpertProfilePage />} />
                                     <Route path="messages" element={<ExpertMessages />} />
                                     <Route path="onboarding" element={<ExpertOnboarding />} />
+                                    <Route path="reviews" element={<ExpertReviews />} />
                                 </Route>
                             </Route>
                         ) : (

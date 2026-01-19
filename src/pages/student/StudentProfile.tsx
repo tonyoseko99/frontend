@@ -1,13 +1,25 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Award, BookOpen, DollarSign, Edit2, Save, X } from 'lucide-react';
+import { User, Mail, Calendar, Award, BookOpen, DollarSign, Edit2, Save, X, Shield, CheckCircle2 } from 'lucide-react';
 import apiClient from '../../api/client';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
+import TwoFactorSetupModal from '../../components/TwoFactorSetupModal';
+import TwoFactorDisableModal from '../../components/TwoFactorDisableModal';
 
 interface UserProfile {
     id: number;
     email: string;
     role: string;
-    createdAt: string;
     balance: number;
+    createdAt: string;
+    twoFactorEnabled?: boolean;
+}
+
+interface Order {
+    id: number;
+    subject: string;
+    status: string;
+    price: number;
+    createdAt: string;
 }
 
 interface ProfileStats {
@@ -18,7 +30,14 @@ interface ProfileStats {
 }
 
 const StudentProfile = () => {
-    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [profile, setProfile] = useState<UserProfile>({
+        id: 0,
+        email: '',
+        role: 'STUDENT',
+        balance: 0,
+        createdAt: '',
+        twoFactorEnabled: false
+    });
     const [stats, setStats] = useState<ProfileStats>({
         totalOrders: 0,
         completedOrders: 0,
@@ -27,6 +46,9 @@ const StudentProfile = () => {
     });
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [show2FASetupModal, setShow2FASetupModal] = useState(false);
+    const [show2FADisableModal, setShow2FADisableModal] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -235,16 +257,57 @@ const StudentProfile = () => {
                             <h3 className="font-bold text-slate-900">Security</h3>
                         </div>
                         <div className="p-6 space-y-3">
-                            <button className="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold hover:bg-slate-200 transition text-left">
+                            <button
+                                onClick={() => setShowPasswordModal(true)}
+                                className="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold hover:bg-slate-200 transition text-left"
+                            >
                                 Change Password
                             </button>
-                            <button className="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold hover:bg-slate-200 transition text-left">
-                                Two-Factor Auth
+                            <button
+                                onClick={() => profile.twoFactorEnabled ? setShow2FADisableModal(true) : setShow2FASetupModal(true)}
+                                className="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold hover:bg-slate-200 transition text-left flex items-center justify-between"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <Shield size={18} />
+                                    Two-Factor Auth
+                                </span>
+                                {profile.twoFactorEnabled && (
+                                    <span className="flex items-center gap-1 text-green-600 text-sm">
+                                        <CheckCircle2 size={16} />
+                                        Enabled
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Change Password Modal */}
+            <ChangePasswordModal
+                isOpen={showPasswordModal}
+                onClose={() => setShowPasswordModal(false)}
+            />
+
+            {/* 2FA Setup Modal */}
+            <TwoFactorSetupModal
+                isOpen={show2FASetupModal}
+                onClose={() => setShow2FASetupModal(false)}
+                onSuccess={async () => {
+                    const userRes = await apiClient.get('/auth/me');
+                    setProfile(userRes.data);
+                }}
+            />
+
+            {/* 2FA Disable Modal */}
+            <TwoFactorDisableModal
+                isOpen={show2FADisableModal}
+                onClose={() => setShow2FADisableModal(false)}
+                onSuccess={async () => {
+                    const userRes = await apiClient.get('/auth/me');
+                    setProfile(userRes.data);
+                }}
+            />
         </div>
     );
 };

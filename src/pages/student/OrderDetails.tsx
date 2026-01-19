@@ -15,6 +15,7 @@ import {
     ChevronRight,
     Send
 } from 'lucide-react';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 interface FileItem {
     id: number;
@@ -42,6 +43,11 @@ const OrderDetails = () => {
     const [loading, setLoading] = useState(true);
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
+    const [showRevisionModal, setShowRevisionModal] = useState(false);
+    const [revisionNotes, setRevisionNotes] = useState('');
+    const [submittingRevision, setSubmittingRevision] = useState(false);
+    const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+    const [showRevisionConfirm, setShowRevisionConfirm] = useState(false);
 
     const fetchOrder = () => {
         if (!orderId) return;
@@ -75,23 +81,12 @@ const OrderDetails = () => {
     };
 
     const handleApprove = async () => {
-        console.log('handleApprove clicked!!!!');
+        if (!order) return;
+        setShowApproveConfirm(true);
+    };
 
-        if (!order) {
-            console.log('No order, returning');
-            return;
-        }
-
-        // console.log('Showing confirm dialog...');
-        // const confirmed = confirm('Are you sure you want to approve this work? This will mark the order as completed and release payment to the expert.');
-        // console.log('Confirm result:', confirmed);
-
-        // if (!confirmed) {
-        //     console.log('User cancelled confirmation');
-        //     return;
-        // }
-
-
+    const confirmApprove = async () => {
+        if (!order) return;
         console.log('Making API call...');
         try {
             await apiClient.post(`/student/orders/${order.id}/approve`);
@@ -105,23 +100,26 @@ const OrderDetails = () => {
     };
 
     const handleRequestRevision = async () => {
-        if (!order) return;
+        if (!order || !revisionNotes.trim()) return;
+        setShowRevisionConfirm(true);
+    };
 
-        const revisionNotes = prompt('Please describe what changes you would like the expert to make:');
-        if (!revisionNotes || !revisionNotes.trim()) {
-            alert('Revision notes are required.');
-            return;
-        }
-
+    const confirmRevision = async () => {
+        if (!order || !revisionNotes.trim()) return;
+        setSubmittingRevision(true);
         try {
             await apiClient.post(`/student/orders/${order.id}/request-revision`, {
                 revisionNotes: revisionNotes.trim()
             });
+            setShowRevisionModal(false);
+            setRevisionNotes('');
             fetchOrder(); // Refresh to show updated status
             alert('Revision requested successfully! The expert has been notified.');
         } catch (err) {
             console.error('Failed to request revision', err);
             alert('Could not request revision. Please try again.');
+        } finally {
+            setSubmittingRevision(false);
         }
     };
 
@@ -277,7 +275,7 @@ const OrderDetails = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={handleRequestRevision}
+                                        onClick={() => setShowRevisionModal(true)}
                                         className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition shadow-md flex items-center justify-center gap-2"
                                     >
                                         <AlertCircle size={20} />
@@ -431,6 +429,86 @@ const OrderDetails = () => {
                     )}
                 </div>
             </div>
+            {/* Revision Request Modal */}
+            {showRevisionModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="bg-gradient-to-r from-red-600 to-rose-600 px-6 py-4 text-white flex justify-between items-center">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <AlertCircle size={24} />
+                                Request Revision
+                            </h3>
+                            <button
+                                onClick={() => setShowRevisionModal(false)}
+                                className="hover:bg-white/20 p-1 rounded-lg transition"
+                            >
+                                <ChevronRight className="rotate-90" size={24} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    What changes would you like the expert to make?
+                                </label>
+                                <textarea
+                                    value={revisionNotes}
+                                    onChange={(e) => setRevisionNotes(e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none min-h-[150px]"
+                                    placeholder="Please be specific about what needs to be changed or improved..."
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => setShowRevisionModal(false)}
+                                    className="flex-1 px-6 py-3 border-2 border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRequestRevision}
+                                    disabled={submittingRevision || !revisionNotes.trim()}
+                                    className="flex-2 bg-red-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-100 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                                >
+                                    {submittingRevision ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send size={18} />
+                                            Submit Request
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirmation Modals */}
+            <ConfirmationModal
+                isOpen={showApproveConfirm}
+                onClose={() => setShowApproveConfirm(false)}
+                onConfirm={confirmApprove}
+                title="Approve Work?"
+                message="Are you sure you want to approve this work? This will mark the order as completed and release payment to the expert. This action cannot be undone."
+                confirmLabel="Yes, Approve & Pay"
+                type="success"
+            />
+
+            <ConfirmationModal
+                isOpen={showRevisionConfirm}
+                onClose={() => setShowRevisionConfirm(false)}
+                onConfirm={confirmRevision}
+                title="Request Revision?"
+                message="Are you sure you want to request a revision? This will send the work back to the expert for further improvements."
+                confirmLabel="Yes, Request Revision"
+                type="warning"
+            />
         </div>
     );
 };

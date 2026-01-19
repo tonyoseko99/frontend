@@ -9,6 +9,8 @@ import {
     LogOut,
     Briefcase,
     FileText,
+    Users,
+    Star,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,15 +19,15 @@ type IconType = React.ComponentType<React.SVGProps<SVGSVGElement> & { size?: num
 const Sidebar = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     // Paradigm: Active State Highlighting
     // This helper function determines if the current route matches the link
     const isActive = (path: string) => location.pathname === path;
 
     const handleLogout = () => {
-        localStorage.removeItem('token'); // Clear the JWT
-        navigate('/login');
+        logout();
+        navigate('/');
     };
 
     // Role-aware navigation
@@ -44,6 +46,7 @@ const Sidebar = () => {
                 { name: 'My Jobs', path: '/expert/my-jobs', icon: Briefcase },
                 { name: 'Submissions', path: '/expert/submissions', icon: FileText },
                 { name: 'Messages', path: '/expert/messages', icon: MessageSquare },
+                { name: 'Reviews', path: '/expert/reviews', icon: Star },
                 { name: 'Profile', path: '/expert/profile', icon: User },
             ]
             : [
